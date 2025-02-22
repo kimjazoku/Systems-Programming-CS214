@@ -59,22 +59,7 @@ void * mymalloc(size_t size, char *file, int line)
         }
         current = current->next;
     }
-    // this algo prototype is to coallesce the heap if there are multiple adjacent free chunks
-        chunk *newCurrent = (chunk *)heap.bytes;
-        while (newCurrent != NULL)
-        {
-            if (newCurrent->isFree == 1 && newCurrent->next != NULL && newCurrent->next->isFree == 1)
-            {
-                newCurrent->size += newCurrent->next->size + sizeof(chunk);
-                newCurrent->next = newCurrent->next->next;
-                if (newCurrent->next != NULL)
-                {
-                    newCurrent->next->prev = newCurrent;
-                }
-            }
-            newCurrent = newCurrent->next;
-        }
-    printf("malloc: Unable to allocate %zu bytes (source.c1000)\n", size);
+    // printf("malloc: Unable to allocate %zu bytes (source.c1000)\n", size);
     return NULL;
 }
 
