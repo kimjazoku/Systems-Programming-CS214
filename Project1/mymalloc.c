@@ -23,6 +23,8 @@ void static initializer()
     chunk *head = (chunk *)heap.bytes; // remember that we need to start the heap with a big ass chunk
     head->size = MEMLENGTH; 
     head->isFree = 1;
+    head->next = NULL;
+    head->prev = NULL;
     initializedCheck = 1;
 }
 
@@ -92,11 +94,38 @@ void myfree(void *ptr, char *file, int line)
     if(current->isFree == 1)
     {
         printf("free: Attempting to free unallocated memory (source.c1000)\n");
-        return;
+        exit(2);
     }
+    //mark the chunk as free
     current->isFree = 1;
 
-    free(ptr);
+    // this checks the next adjacent chunk and coalesces it if it is free
+    if (current->next != NULL && current->next->isFree == 1)
+    {
+        current->prev->size += current->size;
+        current->prev->next = current->next;
+        if (current->next != NULL)
+        {
+            current->next->prev = current;
+        }
+    }
+
+    // this checks the previous adjacent chunk and coalesces it if it is free
+    if (current->prev != NULL && current->prev->isFree == 1)
+    {
+        current->prev->size += current->size;
+        current->prev->next = current->next;
+        if (current->next != NULL)
+        {
+            current->next->prev = current->prev;
+        }
+    }
+
+
+
+    // right after we free a chunk we need to coalesce it with adjecent free chunks asap
+
+    //myfree(ptr);
 }
 
 
