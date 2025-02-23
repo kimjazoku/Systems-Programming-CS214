@@ -18,6 +18,8 @@ typedef struct chunk
     struct chunk *prev; // pointer to the previous chunk
 } chunk;
 
+static void leakDetector();
+
 static void initializer()
 {
     chunk *head = (chunk *)heap.bytes; // remember that we need to start the heap with a big ass chunk
@@ -26,6 +28,8 @@ static void initializer()
     head->next = NULL;
     head->prev = NULL;
     initializedCheck = 1;
+
+    atexit(leakDetector);
 }
 
 void * mymalloc(size_t size, char *file, int line)
@@ -115,7 +119,7 @@ void myfree(void *ptr, char *file, int line)
 
 
 
-static void leakDetector(char *ptr)
+static void leakDetector()
 {
     chunk *current = (chunk *)heap.bytes;
     int leakedChunks = 0;
@@ -126,12 +130,14 @@ static void leakDetector(char *ptr)
         if(current->isFree = 0) {
             leakedChunks += 1;
             leakedBytes += current->size;
+
         }
+
         current = current->next;
     }
 
     if(leakedBytes > 0) {
-        fprintf(stderr, "Memory leak detected: %d bytes in %d objects.\n", leakedBytes, leakedChunks);
+        fprintf(stderr, "Memory leak detected: %d bytes in %d objects.\n", (int) leakedBytes, leakedChunks);
     }
 
 }
