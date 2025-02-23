@@ -40,18 +40,23 @@ void * mymalloc(size_t size, char *file, int line)
     }
 
     chunk *current = (chunk *)heap.bytes; // start at the beginning of the heap
+    size_t allignedSize = (size + 7) & -7;
+
+
+
     while(current != NULL) // if null, then we have reached the end of the heap
     {
         if(current->isFree == 1 && current->size >= size) // current chunk is free and has enough space
         {
             if(current->size > size + sizeof(chunk)) // if there is enough space, split the chunk
             {
-                chunk *newChunk = (chunk *)((char *)current + sizeof(chunk) + size);
-                newChunk->size = current->size - size - sizeof(chunk);
+                chunk *newChunk = (chunk *)((char *)current + sizeof(chunk) + allignedSize);
+                newChunk->size = current->size - allignedSize - sizeof(chunk);
                 newChunk->isFree = 1;
                 newChunk->next = current->next;
                 newChunk->prev = current;
-                current->size = size;
+                
+                current->size = allignedSize;
                 current->isFree = 0;
                 current->next = newChunk;
                 if(newChunk->next != NULL) // if next reaches the end of the heap, loop back into itself
