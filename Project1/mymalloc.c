@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "mymalloc.h"
+#include <stddef.h>
+
 #define MEMLENGTH 4096
 
 static int initializedCheck = 0;
@@ -130,19 +132,20 @@ static void leakDetector()
     int leakedChunks = 0;
     size_t leakedBytes = 0;
 
+//loop through metadata
     while(current != NULL) {
 
+    //if there is a non-free chunk, incriment leaked chunks by 1 and bytes by the bytes in said chunk
         if(current->isFree = 0) {
             leakedChunks += 1;
             leakedBytes += current->size;
-
         }
 
         current = current->next;
     }
 
     if(leakedBytes > 0) {
-        fprintf(stderr, "Memory leak detected: %d bytes in %d objects.\n", (int) leakedBytes, leakedChunks);
+        fprintf(stderr, "Memory leak detected: %d bytes in %d objects.\n", (unsigned int) leakedBytes, leakedChunks);
     }
 
 }
