@@ -86,42 +86,50 @@ void myfree(void *ptr, char *file, int line)
         return;
     }
 
-    chunk *current = (chunk *)((char *)ptr - sizeof(chunk));
-    if(current->isFree == 1)
+    chunk *target = (chunk *)((char *)ptr - sizeof(chunk));
+
+    if(target->isFree == 1)
     {
         printf("free: Attempting to free unallocated memory (source.c1000)\n");
-        exit(2);
+        return;
     }
+
+    chunk *current = (chunk*) heap.bytes;
+    while (current != NULL) {
+        if(current == target) {
+            current->isFree = 1;
+            break;
+        }
+        current = current -> next;
+    }
+    if(current == NULL) {
+        fprintf(stderr, "free: Inappropriate pointer (source.c:1000)");
+    }
+    
     //mark the chunk as free
-    current->isFree = 1;
+    target->isFree = 1;
 
     // this checks the next adjacent chunk and coalesces it if it is free
-    if (current->next != NULL && current->next->isFree == 1)
+    if (target->next != NULL && target->next->isFree == 1)
     {
-        current->prev->size += current->size;
-        current->prev->next = current->next;
-        if (current->next != NULL)
+        target->prev->size += target->size;
+        target->prev->next = target->next;
+        if (target->next != NULL)
         {
-            current->next->prev = current;
+            target->next->prev = target;
         }
     }
 
     // this checks the previous adjacent chunk and coalesces it if it is free
-    if (current->prev != NULL && current->prev->isFree == 1)
+    if (target->prev != NULL && target->prev->isFree == 1)
     {
-        current->prev->size += current->size;
-        current->prev->next = current->next;
-        if (current->next != NULL)
+        target->prev->size += target->size;
+        target->prev->next = target->next;
+        if (target->next != NULL)
         {
-            current->next->prev = current->prev;
+            target->next->prev = target->prev;
         }
     }
-
-
-
-    // right after we free a chunk we need to coalesce it with adjecent free chunks asap
-
-    //myfree(ptr);
 }
 
 
