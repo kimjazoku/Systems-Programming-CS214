@@ -44,14 +44,14 @@ void * mymalloc(size_t size, char *file, int line)
     }   
 
     chunk *current = (chunk *)heap.bytes; // start at the beginning of the heap
-    size_t allignedSize = (size + 7) & -8;
+    size_t allignedSize = (size + 7) & ~7;
 
 
     while(current != NULL) // if null, then we have reached the end of the heap
     {
         if(current->isFree == 1 && current->size >= size) // current chunk is free and has enough space
         {
-            if(current->size > size + sizeof(chunk)) // if there is enough space, split the chunk
+            if(current->size >= size + sizeof(chunk)) // if there is enough space, split the chunk
             {
                 chunk *newChunk = (chunk *)((char *)current + sizeof(chunk) + allignedSize);
                 newChunk->size = current->size - allignedSize - sizeof(chunk);
@@ -62,6 +62,8 @@ void * mymalloc(size_t size, char *file, int line)
                 current->size = allignedSize;
                 current->isFree = 0;
                 current->next = newChunk;
+                
+                //printf("isFree = %d\n", current->isFree);
 
 
                 if(newChunk->next != NULL) // if next reaches the end of the heap, loop back into itself
@@ -75,7 +77,6 @@ void * mymalloc(size_t size, char *file, int line)
         current = current->next;
     }
 
-    chunk *ptr = (chunk*) heap.bytes;
     while(current != NULL) {
         if(current->size > size && current->isFree == 1) {
             
@@ -83,7 +84,7 @@ void * mymalloc(size_t size, char *file, int line)
     }
 
     
-    // printf("malloc: Unable to allocate %zu bytes (source.c1000)\n", size);
+    fprintf(stderr, "malloc: Unable to allocate %zu bytes (source.c1000)\n", size);
     return NULL;
 }
 
@@ -101,39 +102,41 @@ void myfree(void *ptr, char *file, int line)
 
     chunk *target = (chunk *)((char *)ptr - sizeof(chunk));
 
+    //printf("isFree = %d\n", target->isFree);
     if(target->isFree == 1)
     {
         printf("free: Attempting to free unallocated memory (source.c1000)\n");
         return;
     }
-
     chunk *current = (chunk*) heap.bytes;
+
     while (current != NULL) {
         if(current == target) {
+
             current->isFree = 1;
             break;
         }
         current = current -> next;
     }
     if(current == NULL) {
-        fprintf(stderr, "free: Inappropriate pointer (source.c:1000)");
+        fprintf(stderr, "free: Inappropriate pointer (source.c:1000)\n");
+        return;
     }
     
     //mark the chunk as free
     target->isFree = 1;
 
-    // this checks the next adjacent chunk and coalesces it if it is free
+//gpt test
     if (target->next != NULL && target->next->isFree == 1)
     {
-        target->prev->size += target->size;
-        target->prev->next = target->next;
+        target->size += target->next->size;
+        target->next = target->next->next;
         if (target->next != NULL)
         {
             target->next->prev = target;
         }
     }
 
-    // this checks the previous adjacent chunk and coalesces it if it is free
     if (target->prev != NULL && target->prev->isFree == 1)
     {
         target->prev->size += target->size;
@@ -143,6 +146,28 @@ void myfree(void *ptr, char *file, int line)
             target->next->prev = target->prev;
         }
     }
+
+    // // this checks the next adjacent chunk and coalesces it if it is free
+    // if (target->next != NULL && target->next->isFree == 1)
+    // {
+    //     target->prev->size += target->size;
+    //     target->prev->next = target->next;
+    //     if (target->next != NULL)
+    //     {
+    //         target->next->prev = target;
+    //     }
+    // }
+
+    // // this checks the previous adjacent chunk and coalesces it if it is free
+    // if (target->prev != NULL && target->prev->isFree == 1)
+    // {
+    //     target->prev->size += target->size;
+    //     target->prev->next = target->next;
+    //     if (target->next != NULL)
+    //     {
+    //         target->next->prev = target->prev;
+    //     }
+    // }
 }
 
 
@@ -157,7 +182,7 @@ static void leakDetector()
     while(current != NULL) {
 
     //if there is a non-free chunk, incriment leaked chunks by 1 and bytes by the bytes in said chunk
-        if(current->isFree = 0) {
+        if(current->isFree == 0) {
             leakedChunks += 1;
             leakedBytes += current->size;
         }
