@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include "mymalloc.h"
 
+//gcc memgrind.c mymalloc.c -o memtest
+
 int task1();
 int task2();
 int task3();
