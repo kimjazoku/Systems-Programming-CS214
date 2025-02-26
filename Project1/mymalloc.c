@@ -22,6 +22,7 @@ typedef struct chunk
     struct chunk *prev; // pointer to the previous chunk
 } chunk;
 
+
 static void leakDetector();
 
 static void initializer()
@@ -77,11 +78,11 @@ void * mymalloc(size_t size, char *file, int line)
         current = current->next;
     }
 
-    while(current != NULL) {
-        if(current->size > size && current->isFree == 1) {
+    // while(current != NULL) {
+    //     if(current->size > size && current->isFree == 1) {
             
-        }
-    }
+    //     }
+    // }
 
     
     fprintf(stderr, "malloc: Unable to allocate %zu bytes (source.c1000)\n", size);
