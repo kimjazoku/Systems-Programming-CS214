@@ -105,7 +105,7 @@ void myfree(void *ptr, char *file, int line)
     //printf("isFree = %d\n", target->isFree);
     if(target->isFree == 1)
     {
-        printf("free: Attempting to free unallocated memory (source.c1000)\n");
+        fprintf(stderr, "free: Attempting to free unallocated memory (source.c1000)\n");
         return;
     }
     chunk *current = (chunk*) heap.bytes;
@@ -125,8 +125,8 @@ void myfree(void *ptr, char *file, int line)
     
     //mark the chunk as free
     target->isFree = 1;
-
-//gpt test
+    
+    //2nd iteration of coalescing
     if (target->next != NULL && target->next->isFree == 1)
     {
         target->size += target->next->size;
