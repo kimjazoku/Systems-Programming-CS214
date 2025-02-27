@@ -47,47 +47,51 @@ void * mymalloc(size_t size, char *file, int line)
     chunk *current = (chunk *)heap.bytes; // start at the beginning of the heap
     size_t allignedSize = (size + 7) & ~7;
 
-
     while(current != NULL) // if null, then we have reached the end of the heap
     {
         if(current->isFree == 1 && current->size >= allignedSize) // current chunk is free and has enough space
         {
-            if(current->size >= allignedSize + sizeof(chunk)) // if there is enough space, split the chunk
-            {
-                char *splitAddr = (char *)current + sizeof(chunk) + allignedSize;
-                char *heapEnd   = heap.bytes + 4096;
-                if(splitAddr + sizeof(chunk) <= heapEnd)
-                {
 
-                    chunk *newChunk = (chunk *)((char *)current + sizeof(chunk) + allignedSize);
-                    newChunk->size = current->size - (allignedSize + sizeof(chunk));
-                    newChunk->isFree = 1;
-                    newChunk->next = NULL;
-                    newChunk->prev = current;
-                    if(newChunk->next != NULL) // if next reaches the end of the heap, loop back into itself
-                    {
-                        newChunk->next->prev = newChunk;
-                    }
-                    
-                    current->size = allignedSize;
-                    current->isFree = 0;
-                    current->next = newChunk;
-                    
-                    //printf("isFree = %d\n", current->isFree);
-                    
-                    return (char *)current + sizeof(chunk);
-                }
-
+            if ((char *)current + sizeof(chunk) + allignedSize > heap.bytes + MEMLENGTH) {
+                fprintf(stderr, "malloc: Not enough memory left.\n");
+                return NULL;
             }
-            else
-            {
+            if ((char *)current + sizeof(chunk) + allignedSize == heap.bytes + MEMLENGTH) {
+                current->size = allignedSize;
                 current->isFree = 0;
                 return (char *)current + sizeof(chunk);
             }
-           // return (char *)current + sizeof(chunk);
+
+            
+            chunk *newChunk = (chunk *)((char *)current + sizeof(chunk) + allignedSize);
+            newChunk->size = current->size - allignedSize - sizeof(chunk);
+            newChunk->isFree = 1;
+            newChunk->next = NULL;
+            newChunk->prev = current;
+            
+            current->size = allignedSize;
+            current->isFree = 0;
+            current->next = newChunk;
+            
+            //printf("isFree = %d\n", current->isFree);
+
+
+            if(newChunk->next != NULL) // if next reaches the end of the heap, loop back into itself
+            {
+                newChunk->next->prev = newChunk;
+            }
+
+            return (char *)current + sizeof(chunk);
         }
         current = current->next;
     }
+
+    // while(current != NULL) {
+    //     if(current->size > size && current->isFree == 1) {
+            
+    //     }
+    // }
+
     
     fprintf(stderr, "malloc: Unable to allocate %zu bytes (source.c1000)\n", size);
     return NULL;
@@ -134,7 +138,7 @@ void myfree(void *ptr, char *file, int line)
     //2nd iteration of coalescing
     if (target->next != NULL && target->next->isFree == 1)
     {
-        target->size += target->next->size;
+        target->size += target->next->size + sizeof(chunk);
         target->next = target->next->next;
         if (target->next != NULL)
         {
@@ -144,7 +148,7 @@ void myfree(void *ptr, char *file, int line)
 
     if (target->prev != NULL && target->prev->isFree == 1)
     {
-        target->prev->size += target->size;
+        target->prev->size += target->size + sizeof(chunk);
         target->prev->next = target->next;
         if (target->next != NULL)
         {
@@ -196,7 +200,7 @@ static void leakDetector()
     }
 
     if(leakedBytes > 0) {
-        fprintf(stderr, "mymalloc: %u bytes leaked in %d objects.\n", (unsigned int) leakedBytes, leakedChunks);
+        fprintf(stderr, "Memory leak detected: %d bytes in %d objects.\n", (unsigned int) leakedBytes, leakedChunks);
     }
 
 }
