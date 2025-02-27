@@ -7,9 +7,10 @@
 
 #define SUCCESS 0 
 #define FAILURE -1
-#define RUNS 50
+#define RUNS 1
+#define OBJECTS 101
 
-//gcc memgrind.c mymalloc.c -o memtest
+//gcc memgrind.c mymalloc.c -o memgrind
 
 int task1();
 int task2();
@@ -64,12 +65,12 @@ int main(int argc, char *argv[])
     long micros = end.tv_usec - start.tv_usec;
     total = (double)seconds + (micros / 1000000.0);
     double avg_time = total / RUNS; // convert to milliseconds
-    return printf("The average time for performing the workload was %f seconds.", avg_time);
+    printf("The average time for performing the workload was %f seconds.\n", avg_time);
 }
 
 int task1()
 {
-    for(int i = 0; i < 120; i++)
+    for(int i = 0; i < OBJECTS; i++)
     {
         char *ptr = malloc(1);
         if(ptr == NULL)
@@ -82,10 +83,10 @@ int task1()
     return SUCCESS;
 }
 
-int task2() //Use malloc() to get 120 1-byte objects, storing the pointers in an array, then use free() to deallocate the chunks.
+int task2() //Use malloc() to get [OBJECTS] 1-byte objects, storing the pointers in an array, then use free() to deallocate the chunks.
 {
-    char *ptr[120];
-    for (int i = 0; i < 120; i++)
+    char *ptr[OBJECTS];
+    for (int i = 0; i < OBJECTS; i++)
     {
         ptr[i] = malloc(1);
         if (ptr[i] == NULL)
@@ -94,7 +95,7 @@ int task2() //Use malloc() to get 120 1-byte objects, storing the pointers in an
         }
         // printf("task 2: allocation success. iteration %d\n", i);
     }
-    for (int i = 0; i < 120; i++)
+    for (int i = 0; i < OBJECTS; i++)
     {
         free(ptr[i]);
         // printf("task 2: deallocation success. iteration %d\n", i);
@@ -102,12 +103,12 @@ int task2() //Use malloc() to get 120 1-byte objects, storing the pointers in an
     return SUCCESS;
 }
 
-int task3() //Create an array of 120 pointers. Repeatedly make a random choice between (a) allocating a 1-byte object and adding the pointer to the array and (b) deallocating a previously allocated object (if any). Once 120 allocations have been performed, deallocate all objects.
+int task3() //Create an array of [OBJECTS] pointers. Repeatedly make a random choice between (a) allocating a 1-byte object and adding the pointer to the array and (b) deallocating a previously allocated object (if any). Once [OBJECTS] allocations have been performed, deallocate all objects.
 {
-    char *ptr[120];
+    char *ptr[OBJECTS];
     int count = 0;
     int allocCount = 0;
-    while(allocCount < 120)
+    while(allocCount < OBJECTS)
     {
         int choice = rand() % 2;
         if (choice == 0)
