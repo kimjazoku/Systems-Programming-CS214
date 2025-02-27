@@ -46,7 +46,7 @@ mymalloc.c was designed to meet all of the requirements needed provided by the p
 **memgrind.c**
 memgrind.c is our stress test program. It is probably my favorite part of the entire project. 
     We use <sys/time.h> in order to utilize the gettimeofday() method/ function, as per project requirements. The workload is divided up into 3 tasks, each that get their own respective function. They are numbered from 1-3, meant to mimic the project instructions. The reason why we made them their own functions is for code readability and reusability. In our main function, we grab the start time before we execute the workload (tasks 1-3) 50 times. Then we execute the tasks 50 times using a for loop. Once the loop exits we grab the end time and calculate the average in seconds. When memgrind.c exits, it returns this average to terminal.
-    We then created two more tasks for the program to execute. One task tested if free() would work on a pointer that is not exactly on the start of a payload. The other tests if free() could work on an object that has already been freed.
+    We then created two more tasks for the program to execute. One task tested if you use "malloc" then store an object, deallocate it, then reallocate and store another object -- would it contain object 1 or object 2? The other tests if free() could work on an object that has already been freed.
 
 Note for memgrind: the minimum chunk size is greater than 32 bits (40 bits exactly). Therefore, a maximum of 101 chunks can be created if the payload is one bit.
 
