@@ -41,10 +41,13 @@ mymalloc.c was designed to meet all of the requirements needed provided by the p
     our leak detector method works similarly to our free method. We initialize a chunk pointer and iterate through the entire heap to find if any remaining allocated chunks. If it does, it increments an int variable that stores information regarding the number of chunks still allocated in the heap. If the value of this variable > 0, it prints a message to stderr. 
 
 **memtest.c**
-    fill this part out. make sure to mention the headersize is 32 bytes
-
+    memtest.c is the given program used to test basic aspects of the code (correctly filling up and freeing the whole space). In this code, we changed HEADERSIZE to equal 32 bytes, as that is the size of our header.
+    
 **memgrind.c**
 memgrind.c is our stress test program. It is probably my favorite part of the entire project. 
     We use <sys/time.h> in order to utilize the gettimeofday() method/ function, as per project requirements. The workload is divided up into 3 tasks, each that get their own respective function. They are numbered from 1-3, meant to mimic the project instructions. The reason why we made them their own functions is for code readability and reusability. In our main function, we grab the start time before we execute the workload (tasks 1-3) 50 times. Then we execute the tasks 50 times using a for loop. Once the loop exits we grab the end time and calculate the average in seconds. When memgrind.c exits, it returns this average to terminal.
+    We then created two more tasks for the program to execute. One task tested if free() would work on a pointer that is not exactly on the start of a payload. The other tests if free() could work on an object that has already been freed.
 
-Overall this project proved itself to be both challenging and engaging. Figuring out a design idea that was both simple and minimal (two ingredients for a successful program) was what took the most time (besides debugging) during our project implementation. 
+Note for memgrind: the minimum chunk size is greater than 32 bits (40 bits exactly). Therefore, a maximum of 101 chunks can be created if the payload is one bit.
+
+Overall this project proved itself to be both challenging and engaging. Figuring out a design idea that was both simple and minimal (two ingredients for a successful program) was what took the most time (besides debugging) during our project implementation. Specifically, we kept having issues when the last chunk would be at the exact end of the heap, as it would attempt to create a new chunk after, thinking that it had enough space to do so, and we fixed this by manually checking when this case ocurred and avoided making a new chunk.
