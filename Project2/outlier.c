@@ -7,7 +7,7 @@
 
 
 #define BUFLEN 48
-#define DEBUG 0
+#define DEBUG 1
 
 char InvalidStart[] = { '(', '{', '[', '\"', '\'', };
 char InvalidEnd[] = { ')', '}', ']', '\"', '\'', '?', ',', '.', '!' }; 
@@ -18,9 +18,16 @@ typedef struct Node {
     char *word;
     struct Node *next;
     int freq;
-    char *fileName;
 
 } Node;
+
+typedef struct FileNode {
+
+    Node *front;
+    char *fileName;
+    int totalWords;
+
+} FileNode;
 
 
 // Loops through entire word linked list to find if the word already exists. If yes, return it and increase frequency. Otherwise, return NULL (so we can create the node)
@@ -28,7 +35,6 @@ Node *FindWord(char *word, Node *ptr) {
 
     while(ptr != NULL) {
         if(strcmp(word, ptr->word) == 0) {
-            ptr->freq++;
             return ptr;
         }
         ptr = ptr->next;
@@ -43,6 +49,10 @@ Node *CreateNode(char *word, Node *front) {
     Node *newNode = malloc(sizeof(Node));
     newNode->freq = 1;
     newNode->word = word;
+
+    if(DEBUG) {
+        //printf("%s ", newNode->word);
+    }
 
     if(front == NULL) {
         return newNode;
@@ -95,7 +105,7 @@ void WordReader(char *filename) {
 
 }
 
-int wordCounter(char *filename)
+Node *wordCounter(char *filename, FileNode *fileName)
 {
     // not sure if this is the best way to do this but it works
     // we don't need a separate function for this, but it makes the main function cleaner
@@ -105,41 +115,221 @@ int wordCounter(char *filename)
     char buf[BUFLEN];
     int file = open(filename, O_RDONLY);
     
+
+    Node *front = NULL;
+
+    int j = 0;
+    char currentWord[BUFLEN];
+
     if(file == -1) {
         perror("File not found");
     }
     while((bytes = read(file, buf, BUFLEN)) > 0) {
         for(int i = 0; i < bytes; i++) {
+            
+        //treat "Hello" == "hello"
+            buf[i] = tolower(buf[i]);
+
+
+        //end of a word
             if(isspace(buf[i])) {
+                
                 inWord = 0;
+                currentWord[j] = '\0';
+
+            //loop through the word from the end. If there is an invalid character at the end, it will keep removing subsequent invalid characters until it finds a valid one
+                int validEnd = 1;
+                for(int w = strlen(currentWord) - 1; w >= 0; w--) {
+                    for(int c = 0; c < sizeof(InvalidEnd); c++) {
+                        if(currentWord[w] == InvalidEnd[c]) {
+                            currentWord[w] = '\0';
+                            validEnd = 0;
+                        }
+                    }
+                    if(validEnd) {
+                        break;
+                    }   
+                }
+
+            //loop through linked list to find if the word was already found in the file
+                Node *currentNode = FindWord(currentWord, front);
+                if(currentNode == NULL) {
+
+                //if it doesn't exist, add it to the front
+                    front = CreateNode(strdup(currentWord), front);
+                }
+                else {
+                    currentNode->freq++;
+                }
+                
+                j = 0;
+              
             }
+
+        //start of a word
             else if(inWord == 0) {
-                inWord = 1;
-                words++;
+                
+                int validStart = 1;
+
+                for(int c = 0; c < sizeof(InvalidStart); c++) {
+                    if(buf[i] == InvalidStart[c]) {
+                        validStart = 0;
+                    } 
+                }
+
+                if(validStart) {
+                    inWord = 1;
+                    words++;
+                }
+
+
+            }
+
+        //in word
+            if(inWord == 1) {
+               currentWord[j] = buf[i];
+               j++; 
             }
         }
     }
-    printf("Word count: %d\n", words);
+
+    if(inWord == 1 && j > 0) {
+        
+        inWord = 0;
+        currentWord[j] = '\0';
+
+        int validEnd = 1;
+        for(int w = strlen(currentWord) - 1; w >= 0; w--) {
+            for(int c = 0; c < sizeof(InvalidEnd); c++) {
+                if(currentWord[w] == InvalidEnd[c]) {
+                    currentWord[w] = '\0';
+                    validEnd = 0;
+                }
+            }
+            if(validEnd) {
+                break;
+            }   
+        }
+
+    //loop through linked list to find if the word was already found in the file
+        Node *currentNode = FindWord(strdup(currentWord), front);
+        if(currentNode == NULL) {
+
+        //if it doesn't exist, add it to the front
+            front = CreateNode(strdup(currentWord), front);
+        }
+        else {
+            currentNode->freq++;
+        }
+        
+        j = 0;    }
+    
     if(bytes < 0) {
         fprintf(stderr, "Error reading file %s\n", filename);
     }
-    return words; // we can use this to keep track of how many words are in the file
+
+    fileName->totalWords = words;
+
+    return front; // we can use this to keep track of how many words are in the file
 }
+
+void PrintTable(FileNode *arr, int size) {
+
+    printf("\tWord \t | \t");
+    
+    Node *allWords = NULL;
+    int totalWords = 0;
+
+    for(int i = 0; i < size; i++) {
+        printf("%s \t | \t", (*(arr+i)).fileName);
+
+        Node *ptr = arr[i].front;
+        while(ptr != NULL) {
+            
+        //See if current word is in AllWords. If not, add it.
+            Node *currentNode = FindWord(ptr->word, allWords);
+            if(currentNode == NULL) {
+                allWords = CreateNode(ptr->word, allWords);
+            }
+        //if it is, increase TOTAL frequency  
+            else {
+                currentNode->freq++;
+            }
+            totalWords++;
+
+            ptr = ptr->next;
+        }
+
+    }
+
+    printf("Overall\n");
+
+    printf("___________________________________________________________________________________\n");
+
+    Node *ptr = allWords; 
+
+    while(ptr != NULL) {
+        printf("\t%s \t | \t", ptr->word);
+
+        for(int i = 0; i < size; i++) {
+        
+        //finds amount of times word appears in file arr[i](should be under the correct letter)
+            Node *wordForFile = FindWord(ptr->word, arr[i].front);
+
+            double freakyFile = wordForFile->freq / arr[i].totalWords;
+
+            printf("%lf \t | \t", freakyFile);
+
+        }
+
+        printf("%lf\n", (double) (ptr->freq / totalWords));
+    }
+
+
+}
+
+
 
 int main(int argc, char *argv[]) {
 
-    Node *front = NULL;
-    int wordCount;
+    if(DEBUG) {
+        argc = 4;
+        argv[1] = "a.txt";
+        argv[2] = "b.txt";
+        argv[3] = "c.txt";
+    }
+
+    FileNode *files = malloc((argc - 1) * sizeof(FileNode));
+
     for(int i = 1; i < argc; i++)
     {
-        wordCount = wordCounter(argv[i]); // used to get the word count
-        printf("Word count: %d\n", wordCount);   
+        files[i - 1].front = NULL;
+        files[i - 1].fileName = argv[i];
+        files[i - 1].front = wordCounter(argv[i], &files[i-1]); // used to get the word count
+
+        if(DEBUG) {
+
+            printf("File: %s\n", files[i-1].fileName);
+            printf("total words in file: %d\n", files[i-1].totalWords);
+
+            Node *ptr = files[i-1].front;
+            while(ptr != NULL) {
+                printf("%s ", ptr->word);
+                printf("(%d) ", ptr->freq);
+                ptr = ptr->next;
+            }
+            printf("\n\n");
+        } 
     }
     
+    PrintTable(files, argc - 1);
 
 
+    for(int i = 0; i < argc - 1; i++) {
 
+        free(&files[i]);
+    }
+    free(files);
 
     return 0;
 }
-
