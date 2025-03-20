@@ -64,16 +64,19 @@ void WordReader(char *filename) {
     if(file == -1) {
         perror("File not found");
     }
+
     // read file
     int bytes = read(file, buf, BUFLEN);
     if(bytes < 0) {
         perror("Error reading file");
         close(file);
     }
+
     else if(bytes == 0) {
         puts("end of file");
         close(file);
     }
+
     else {
         buf[bytes] = '\0'; // add in the terminator
         printf("%s\n", buf); // print out the buffer
@@ -89,6 +92,7 @@ void WordReader(char *filename) {
         printf("%s\n", buf);
     }
 
+
 }
 
 int wordCounter(char *filename)
@@ -100,6 +104,7 @@ int wordCounter(char *filename)
     int bytes;
     char buf[BUFLEN];
     int file = open(filename, O_RDONLY);
+    
     if(file == -1) {
         perror("File not found");
     }
@@ -124,11 +129,17 @@ int wordCounter(char *filename)
 int main(int argc, char *argv[]) {
 
     Node *front = NULL;
-    int wordCount = wordCounter(argv[1]); // used to get the word count
-    printf("Word count: %d\n", wordCount);
-
+    int wordCount;
+    for(int i = 1; i < argc; i++)
+    {
+        wordCount = wordCounter(argv[i]); // used to get the word count
+        printf("Word count: %d\n", wordCount);   
+    }
     
+
+
 
 
     return 0;
 }
+
