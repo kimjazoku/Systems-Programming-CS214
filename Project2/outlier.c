@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 
 
 #define BUFLEN 48
@@ -241,7 +242,7 @@ void PrintTable(FileNode *arr, int size) {
     int totalWords = 0;
 
     for(int i = 0; i < size; i++) {
-        printf("%s \t | \t", (*(arr+i)).fileName);
+        printf("%s \t\t | \t", (*(arr+i)).fileName);
 
         Node *ptr = arr[i].front;
         while(ptr != NULL) {
@@ -253,9 +254,9 @@ void PrintTable(FileNode *arr, int size) {
             }
         //if it is, increase TOTAL frequency  
             else {
-                currentNode->freq++;
+                currentNode->freq += ptr->freq;
             }
-            totalWords++;
+            totalWords += ptr->freq;
 
             ptr = ptr->next;
         }
@@ -264,7 +265,7 @@ void PrintTable(FileNode *arr, int size) {
 
     printf("Overall\n");
 
-    printf("___________________________________________________________________________________\n");
+    printf("__________________________________________________________________________________________________________\n\n");
 
     Node *ptr = allWords; 
 
@@ -276,13 +277,21 @@ void PrintTable(FileNode *arr, int size) {
         //finds amount of times word appears in file arr[i](should be under the correct letter)
             Node *wordForFile = FindWord(ptr->word, arr[i].front);
 
-            double freakyFile = wordForFile->freq / arr[i].totalWords;
+            if(wordForFile == NULL) {
 
-            printf("%lf \t | \t", freakyFile);
+                printf("%f \t | \t", 0.00);
+                
+            }
+            else {
+                float freakyFile = (float) wordForFile->freq / (float) arr[i].totalWords;
+                printf("%f \t | \t", freakyFile);
+            }
+
 
         }
 
-        printf("%lf\n", (double) (ptr->freq / totalWords));
+        printf("%f\n", (float) ptr->freq / (float) totalWords);
+        ptr = ptr->next;
     }
 
 
@@ -327,9 +336,9 @@ int main(int argc, char *argv[]) {
 
     for(int i = 0; i < argc - 1; i++) {
 
-        free(&files[i]);
+        //free(&files[i]);
     }
-    free(files);
+    //free(files);
 
     return 0;
 }
