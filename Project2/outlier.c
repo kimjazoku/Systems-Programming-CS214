@@ -26,7 +26,10 @@ typedef struct FileNode {
 
     Node *front;
     char *fileName;
+    char *maxWord;
     int totalWords;
+    float gri;
+
 
 } FileNode;
 
@@ -294,8 +297,72 @@ void PrintTable(FileNode *arr, int size) {
         ptr = ptr->next;
     }
 
+    // what we need to do is find the word with the greatest relative increase in frequency with respect to overall frequency
+    // then we need to print the word with the greatest relative increase in frequency with respect to overall frequency and the file it is in
+    Node *temp = allWords;
+    Node *max = NULL;
+    float maxFreq = 0.0;
+    FileNode *maxFile[size];
+    // set 
+    for (int i = 0; i < size; i++)
+    {
+        maxFile[i] = calloc(1, sizeof(FileNode));
+    }
 
+    while(temp != NULL) {
+
+        for(int i = 0; i < size; i++) {
+            Node *wordForFile = FindWord(temp->word, arr[i].front);
+            
+            if(wordForFile != NULL) {
+                // calculate overall freq for the word
+                float overall = (float) temp->freq / (float) totalWords;
+
+                // calculate the word's freq in the file
+                float freakyFile = (float) wordForFile->freq / (float) arr[i].totalWords;
+
+                // calculate the word's freq relative to overall freq
+                float wordFreq = freakyFile / overall;
+                
+                // track the word with the greatest relative increase
+                if(wordFreq > maxFreq) {
+                    maxFreq = wordFreq;
+                    max = temp; // store the word (Node)
+
+                    
+                    // maxFile[i]->fileName = arr[i].fileName; // store the file
+                    // maxFile[i]->gri = wordFreq; // store the word's relative increase
+                    // maxFile[i]->maxWord = temp->word; // store the word
+                }
+                maxFile[i]->fileName = arr[i].fileName; // store the file
+                if(wordFreq > maxFile[i]->gri)
+                {
+                    maxFile[i]->gri = wordFreq; // store the word's relative increase
+                    maxFile[i]->maxWord = temp->word; // store the word
+                }
+ 
+                if(DEBUG)
+                {
+                   //printf("%s: %s == %f\n", arr[i].fileName, wordForFile->word, wordFreq);
+                }
+                //    printf("%s: %s\n", arr[i].fileName, temp->word);
+            }
+        }
+        temp = temp->next;
+    }
+
+    // now print the word with the greatest relative increase in frequency with respect to overall frequency and the file it is in
+    if (max != NULL)
+    {
+        for (int i = 0; i < size; i++)
+        {
+            printf("%s: %s freq: %f\n", maxFile[i]->fileName, maxFile[i]->maxWord, maxFile[i]->gri);
+            
+        }
+    }
 }
+
+
 
 
 
@@ -309,6 +376,7 @@ int main(int argc, char *argv[]) {
     }
 
     FileNode *files = malloc((argc - 1) * sizeof(FileNode));
+    
 
     for(int i = 1; i < argc; i++)
     {
