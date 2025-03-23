@@ -64,47 +64,6 @@ Node *CreateNode(char *word, Node *front) {
     return newNode;
 }
 
-void WordReader(char *filename) {
-
-    char buf[BUFLEN];
-    int spaces = 0;
-
-    // open file
-    int file = open(filename, O_RDONLY);
-    if(file == -1) {
-        perror("File not found");
-    }
-
-    // read file
-    int bytes = read(file, buf, BUFLEN);
-    if(bytes < 0) {
-        perror("Error reading file");
-        close(file);
-    }
-
-    else if(bytes == 0) {
-        puts("end of file");
-        close(file);
-    }
-
-    else {
-        buf[bytes] = '\0'; // add in the terminator
-        printf("%s\n", buf); // print out the buffer
-    }
-    
-    while(bytes > 0) {
-        for(int i = 0; i < bytes; i++) {
-            if(isspace(buf[i])) {
-                spaces++;
-            }
-        }
-        bytes = read(file, buf, BUFLEN);
-        printf("%s\n", buf);
-    }
-
-
-}
-
 Node *wordCounter(char *filename, FileNode *fileName)
 {
     // not sure if this is the best way to do this but it works
@@ -417,7 +376,7 @@ void DirectoryTraversal(struct stat *fileInfo, char *fileName) {
                 }
                 while((dEnt = readdir(directory)) != NULL) {
                     
-                    if(strcmp(dEnt->d_name, ".") != 0 && strcmp(dEnt->d_name, "..") != 0) {
+                    if(dEnt->d_name[0] != '.') {
                         
                         char newPath[1000];
                         
