@@ -316,6 +316,12 @@ void PrintTable(FileNode **arr, int size) {
                     maxFile[i]->gri = wordFreq; // store the word's relative increase
                     maxFile[i]->maxWord = temp->word; // store the word
                 }
+                else if(wordFreq == maxFile[i]->gri) {
+                    if(maxFile[i]->maxWord[0] > temp->word[0]) {
+                        maxFile[i]->gri = wordFreq; // store the word's relative increase
+                        maxFile[i]->maxWord = temp->word; // store the word
+                    }
+                }
  
                 if(DEBUG)
                 {
