@@ -115,8 +115,16 @@ Node *wordCounter(char *filename, FileNode *fileName)
                 Node *currentNode = FindWord(currentWord, front);
                 if(currentNode == NULL) {
 
+                    int hasLetter = 0;
+                    for(int j = 0; j < strlen(currentWord); j++) {
+                        if(isalpha(currentWord[j])) {
+                            hasLetter = 1;
+                        }
+                    }
                 //if it doesn't exist, add it to the front
-                    front = CreateNode(strdup(currentWord), front);
+                    if(hasLetter) {
+                        front = CreateNode(strdup(currentWord), front);
+                    }
                 }
                 else {
                     currentNode->freq++;
@@ -177,8 +185,16 @@ Node *wordCounter(char *filename, FileNode *fileName)
         Node *currentNode = FindWord(strdup(currentWord), front);
         if(currentNode == NULL) {
 
-        // if it doesn't exist, add it to the front
-            front = CreateNode(strdup(currentWord), front);
+            int hasLetter = 0;
+            for(int j = 0; j < strlen(currentWord); j++) {
+                if(isalpha(currentWord[j])) {
+                    hasLetter = 1;
+                }
+            }
+            if(hasLetter) {
+            // if it doesn't exist, add it to the front
+                front = CreateNode(strdup(currentWord), front);
+            }
         }
         else {
             currentNode->freq++;
