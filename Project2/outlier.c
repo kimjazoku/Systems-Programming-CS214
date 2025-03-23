@@ -58,15 +58,8 @@ Node *CreateNode(char *word, Node *front) {
     if(DEBUG) {
         //printf("%s ", newNode->word);
     }
-
-    if(front == NULL) {
-        return newNode;
-    }
-    else {
-        newNode->next = front;
-        return newNode;
-    }
-
+    newNode->next = front;
+    return newNode;
 }
 
 void WordReader(char *filename) {
@@ -379,12 +372,12 @@ void DirectoryTraversal(struct stat *fileInfo, char *fileName, FileNode *file) {
     if(stat(fileName, fileInfo) == 0) {
         if(S_ISREG(fileInfo->st_mode)) {
             if(DEBUG) {
-                printf("Regular File\n");
+                // printf("Regular File\n");
             }
             
             if(strncmp(fileName + strlen(fileName) - extSize, extension, extSize) == 0) {
                 if(DEBUG) {
-                    printf("Text File\n");
+                    // printf("Text File\n");
                 }
                 
                 file->front = wordCounter(fileName, file);
@@ -396,7 +389,7 @@ void DirectoryTraversal(struct stat *fileInfo, char *fileName, FileNode *file) {
 
             
             if(DEBUG) {
-                printf("Directory\n");
+                // printf("Directory\n");
             }
             
             struct dirent *dEnt;
@@ -464,7 +457,7 @@ int main(int argc, char *argv[]) {
         struct stat fileInfo;
         DirectoryTraversal(&fileInfo, files[i-1].fileName, &files[i - 1]);
         
-        files[i - 1].front = wordCounter(argv[i], &files[i-1]); // used to get the word count
+        //files[i - 1].front = wordCounter(argv[i], &files[i-1]); // used to get the word count
 
 
 
