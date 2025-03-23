@@ -4,7 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <math.h>
+#include <sys/stat.h>
+#include <dirent.h>
 
 
 #define BUFLEN 48
@@ -245,7 +246,7 @@ void PrintTable(FileNode *arr, int size) {
     int totalWords = 0;
 
     for(int i = 0; i < size; i++) {
-        printf("%s \t\t | \t", (*(arr+i)).fileName);
+        printf("%s \t | \t", (*(arr+i)).fileName);
 
         Node *ptr = arr[i].front;
         while(ptr != NULL) {
@@ -268,7 +269,7 @@ void PrintTable(FileNode *arr, int size) {
 
     printf("Overall\n");
 
-    printf("__________________________________________________________________________________________________________\n\n");
+    printf("________________________________________________________________________________\n\n");
 
     Node *ptr = allWords; 
 
@@ -282,20 +283,22 @@ void PrintTable(FileNode *arr, int size) {
 
             if(wordForFile == NULL) {
 
-                printf("%f \t | \t", 0.00);
+                printf("%.2f \t | \t", 0.00);
                 
             }
             else {
                 float freakyFile = (float) wordForFile->freq / (float) arr[i].totalWords;
-                printf("%f \t | \t", freakyFile);
+                printf("%.2f \t | \t", freakyFile);
             }
 
 
         }
 
-        printf("%f\n", (float) ptr->freq / (float) totalWords);
+        printf("%.2f\n", (float) ptr->freq / (float) totalWords);
         ptr = ptr->next;
     }
+
+    printf("\n");
 
     // what we need to do is find the word with the greatest relative increase in frequency with respect to overall frequency
     // then we need to print the word with the greatest relative increase in frequency with respect to overall frequency and the file it is in
@@ -356,23 +359,86 @@ void PrintTable(FileNode *arr, int size) {
     {
         for (int i = 0; i < size; i++)
         {
-            printf("%s: %s freq: %f\n", maxFile[i]->fileName, maxFile[i]->maxWord, maxFile[i]->gri);
-            
+            printf("%s: %s", maxFile[i]->fileName, maxFile[i]->maxWord);
+            if(DEBUG) {
+                printf(" freq: %.2f", maxFile[i]->gri);
+            }
+            printf("\n");
         }
     }
 }
 
 
+void DirectoryTraversal(struct stat *fileInfo, char *fileName) {
+    
+    char *extension = ".txt";
+    size_t extSize = strlen(extension);
 
+    
+
+    if(stat(fileName, fileInfo) == 0) {
+        if(S_ISREG(fileInfo->st_mode)) {
+            if(DEBUG) {
+                printf("Regular File\n");
+            }
+        }
+        else if(S_ISDIR(fileInfo->st_mode)) {
+
+            char newPath[1000];
+
+            if(DEBUG) {
+                printf("Directory\n");
+            }
+
+            struct dirent *dEnt;
+
+            DIR *directory = opendir(fileName);
+
+            if (directory == NULL) {
+                perror("Could not open directory");
+                return;
+            }
+            while((dEnt = readdir(directory)) != NULL) {
+                
+                if(strcmp(dEnt->d_name, ".") != 0 && strcmp(dEnt->d_name, "..") != 0) {
+                    
+                    if(DEBUG) {
+                        printf("%s\n", dEnt->d_name);
+                    }
+                    
+                    strcpy(newPath, fileName);
+                    strcat(newPath, "/");
+                    strcat(newPath, dEnt->d_name);
+
+                    DirectoryTraversal(fileInfo, newPath);
+
+                }
+                char *newPath;
+
+            }
+
+        }
+        else {
+            if(DEBUG) {
+                printf("The fuck wrong witchu");
+            }
+        }
+    }
+    else {
+        perror("sum wrong wit the file gang");
+    }
+}
 
 
 int main(int argc, char *argv[]) {
 
     if(DEBUG) {
-        argc = 4;
-        argv[1] = "a.txt";
-        argv[2] = "b.txt";
-        argv[3] = "c.txt";
+        argc = 2;
+
+        argv[1] = "abc";
+        // argv[1] = "abc/a.txt";
+        // argv[2] = "abc/b.txt";
+        // argv[3] = "abc/c.txt";
     }
 
     FileNode *files = malloc((argc - 1) * sizeof(FileNode));
@@ -380,9 +446,14 @@ int main(int argc, char *argv[]) {
 
     for(int i = 1; i < argc; i++)
     {
+
         files[i - 1].front = NULL;
         files[i - 1].fileName = argv[i];
         files[i - 1].front = wordCounter(argv[i], &files[i-1]); // used to get the word count
+
+        struct stat fileInfo;
+        DirectoryTraversal(&fileInfo, files[i-1].fileName);
+
 
         if(DEBUG) {
 
@@ -400,7 +471,6 @@ int main(int argc, char *argv[]) {
     }
     
     PrintTable(files, argc - 1);
-
 
     for(int i = 0; i < argc - 1; i++) {
 
