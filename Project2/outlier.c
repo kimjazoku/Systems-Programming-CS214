@@ -369,7 +369,7 @@ void PrintTable(FileNode *arr, int size) {
 }
 
 
-void DirectoryTraversal(struct stat *fileInfo, char *fileName) {
+void DirectoryTraversal(struct stat *fileInfo, char *fileName, FileNode *file) {
     
     char *extension = ".txt";
     size_t extSize = strlen(extension);
@@ -381,19 +381,28 @@ void DirectoryTraversal(struct stat *fileInfo, char *fileName) {
             if(DEBUG) {
                 printf("Regular File\n");
             }
+            
+            if(strncmp(fileName + strlen(fileName) - extSize, extension, extSize) == 0) {
+                if(DEBUG) {
+                    printf("Text File\n");
+                }
+                
+                file->front = wordCounter(fileName, file);
+            }
+
         }
+
         else if(S_ISDIR(fileInfo->st_mode)) {
 
-            char newPath[1000];
-
+            
             if(DEBUG) {
                 printf("Directory\n");
             }
-
+            
             struct dirent *dEnt;
-
+            
             DIR *directory = opendir(fileName);
-
+            
             if (directory == NULL) {
                 perror("Could not open directory");
                 return;
@@ -401,6 +410,8 @@ void DirectoryTraversal(struct stat *fileInfo, char *fileName) {
             while((dEnt = readdir(directory)) != NULL) {
                 
                 if(strcmp(dEnt->d_name, ".") != 0 && strcmp(dEnt->d_name, "..") != 0) {
+                    
+                    char newPath[1000];
                     
                     if(DEBUG) {
                         printf("%s\n", dEnt->d_name);
@@ -410,13 +421,13 @@ void DirectoryTraversal(struct stat *fileInfo, char *fileName) {
                     strcat(newPath, "/");
                     strcat(newPath, dEnt->d_name);
 
-                    DirectoryTraversal(fileInfo, newPath);
+                    DirectoryTraversal(fileInfo, newPath, file);
 
                 }
                 char *newPath;
 
             }
-
+            closedir(directory);
         }
         else {
             if(DEBUG) {
@@ -440,19 +451,21 @@ int main(int argc, char *argv[]) {
         // argv[2] = "abc/b.txt";
         // argv[3] = "abc/c.txt";
     }
-
+    
     FileNode *files = malloc((argc - 1) * sizeof(FileNode));
     
-
+    
     for(int i = 1; i < argc; i++)
     {
-
+        
         files[i - 1].front = NULL;
         files[i - 1].fileName = argv[i];
+        
+        struct stat fileInfo;
+        DirectoryTraversal(&fileInfo, files[i-1].fileName, &files[i - 1]);
+        
         files[i - 1].front = wordCounter(argv[i], &files[i-1]); // used to get the word count
 
-        struct stat fileInfo;
-        DirectoryTraversal(&fileInfo, files[i-1].fileName);
 
 
         if(DEBUG) {
