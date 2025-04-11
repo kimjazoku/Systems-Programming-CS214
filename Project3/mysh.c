@@ -3,9 +3,20 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+
+/*
+Things to impliment:
+
+case where token is '*'
+case where in word and at end of file
+case where line is '\n'
+*/
 
 
 #define DEBUG 0
+#define BUFSIZE 100
+#define MAXWORD 45
 
 char otherTokens[] = { '>', '<', '|', '*', '#'};
 
@@ -17,7 +28,7 @@ typedef struct Token
 
 void *CreateToken(char *word, Token *front) {
     Token *newToken = malloc(sizeof(Token));
-    newToken->str = word;
+    
 
     if(DEBUG) {
         // printf("%s ", newNode->word);
@@ -26,6 +37,7 @@ void *CreateToken(char *word, Token *front) {
     while(front != NULL) {
         if (front->next == NULL) {
             front->next = newToken;
+            newToken->str = word;
             newToken->next = NULL;
             break;
         }
@@ -35,90 +47,72 @@ void *CreateToken(char *word, Token *front) {
 }
 
 // use this for batch since we pass in a file
-void readIn(int argc, char *filename)
+void readIn(int fd, Token *front)
 {
-    char buf[100];
-    int bytes;
-    while((bytes = read(bytes, buf, sizeof(buf))) > 0) {
-        for(int i = 0; i < bytes; i++) {
-        // end of a word
-            if(isspace(buf[i])) {
-                
-                inWord = 0;
-                currentWord[j] = '\0';
+    char buf[BUFSIZE];
+    int bytes_read;
 
-            // loop through the word from the end. If there is an invalid character at the end, it will keep removing subsequent invalid characters until it finds a valid one
-                int validEnd = 1;
-                for(int w = strlen(currentWord) - 1; w >= 0; w--) {
-                    for(int c = 0; c < sizeof(InvalidEnd); c++) {
-                        if(currentWord[w] == InvalidEnd[c]) {
-                            currentWord[w] = '\0';
-                            validEnd = 0;
-                        }
-                    }
-                    if(validEnd) {
-                        break;
-                    }
-                    validEnd = 1;
-                }
 
-            // loop through linked list to find if the word was already found in the file
-                Node *currentNode = FindWord(currentWord, front);
-                if(currentNode == NULL) {
+    int comment = 0;
+    int inWord = 0;
+    char currentToken[MAXWORD];
+    int tokenPos = 0;
 
-                    int hasLetter = 0;
-                    for(int j = 0; j < strlen(currentWord); j++) {
-                        if(isalpha(currentWord[j])) {
-                            hasLetter = 1;
-                        }
-                    }
-                //if it doesn't exist, add it to the front
-                    if(hasLetter) {
-                        front = CreateNode(strdup(currentWord), front);
-                    }
+    while((bytes_read = read(fd, buf, BUFSIZE)) > 0) {
+        for(int i = 0; i < bytes_read; i++) {
+
+            if(buf[i] == '\n') {
+                //Add something later to deal with this case
+            }
+
+            if(comment || buf[i] == '#') {
+                if(buf[i] != '\n') {
+                    comment = 1;
+                    continue;
                 }
                 else {
-                    currentNode->freq++;
+                    comment = 0;
                 }
-                
-                j = 0;
-              
+            }
+            //start of word
+            if(!inWord && !isspace(buf[i])) {
+                inWord = 1;                
             }
 
-        // start of a word
-            else if(inWord == 0) {
-                
-                int validStart = 1;
+            if(inWord) {
 
-                for(int c = 0; c < sizeof(InvalidStart); c++) {
-                    if(buf[i] == InvalidStart[c]) {
-                        validStart = 0;
-                    } 
+            //end of word
+                if(isspace(buf[i])) {
+                    inWord = 0;
+                //add current token to list of commands
+                    CreateToken(currentToken, front);
+                //reset current token length
+                    currentToken[0] = '\0';
+                    tokenPos = 0;
+
+                    continue;
                 }
-
-                if(validStart) {
-                    inWord = 1;
-                    words++;
-                }
-
-
+                //middle of word
+                currentToken[tokenPos++] = buf[i];
+                currentToken[tokenPos] = '\0';
             }
+        //NEED TO ADD CASE FOR END OF FILE WITH CURRENTTOKEN > 0
 
-        // in word
-            if(inWord == 1) {
-               currentWord[j] = buf[i];
-               j++; 
-            }
+
+            
         }
+
     }
 }
 
 int main(int argc, char *argv[]) {    
-    
+    int fd;
     if (argc == 1) {
         printf("No arguments provided\n");
         printf("stdin is a terminal\n");
         printf("Welcome to my shell!\n");
+        fd = 1;
+        
         } 
     if (argc == 0) {
         printf("No arguments provided\n");
@@ -127,7 +121,7 @@ int main(int argc, char *argv[]) {
     } 
 
 
-    else{
+    
     int fd = isatty(STDIN_FILENO);
     if (fd == 1) {
         int exitStatus = 1;
@@ -154,6 +148,10 @@ int main(int argc, char *argv[]) {
             }
 
             
+            //read from stdin
+            printf("mysh> ");
+            readIn(0, front);
+
 
             // search for exit in the linked list
             while(front != NULL)
@@ -166,14 +164,12 @@ int main(int argc, char *argv[]) {
                 }
                 front = front->next;
             }
-
+            
         }
         
-        readIn(argc, argv[1]);
+        
 
         
-    }
-
     }
 
     return 0;
