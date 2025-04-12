@@ -3,20 +3,9 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-
-/*
-Things to impliment:
-
-case where token is '*'
-case where in word and at end of file
-case where line is '\n'
-*/
 
 
 #define DEBUG 0
-#define BUFSIZE 100
-#define MAXWORD 45
 
 char otherTokens[] = { '>', '<', '|', '*', '#'};
 
@@ -26,115 +15,172 @@ typedef struct Token
     struct Token *next;
 } Token;
 
-void *CreateToken(char *word, Token *front) {
+Token *CreateToken(char *word, Token *front) {
     Token *newToken = malloc(sizeof(Token));
-    
-
-    if(DEBUG) {
-        // printf("%s ", newNode->word);
+    if (!newToken) {
+        perror("Failed to allocate memory for new token");
+        return NULL;
     }
-    
-    while(front != NULL) {
-        if (front->next == NULL) {
-            front->next = newToken;
-            newToken->str = word;
-            newToken->next = NULL;
-            break;
-        }
 
-        front = front->next;
+    newToken->str = word;
+    newToken->next = NULL;
+    
+    if (front == NULL) {
+        front = newToken;
+        return front;
+    }
+
+    Token *curr = front;
+    while(curr->next != NULL) {
+        // if (front->next == NULL) {
+        //     front->next = newToken;
+        //     newToken->next = NULL;
+        //     break;
+        // }
+
+        curr = curr->next;
+    }
+    curr->next = newToken;
+    return front;
+}
+
+void readFile(int argc, char *filename, Token *front)
+{
+    char buf[100];
+    char currentWord[45];
+    int bytes;
+    int inWord;
+    int j = 0;
+    while((bytes = read(bytes, buf, sizeof(buf))) > 0) {
+        for(int i = 0; i < bytes; i++) {
+        // end of a word
+            if(isspace(buf[i])) {
+                
+                inWord = 0;
+                currentWord[j] = '\0';
+                createToken(currentWord, front);
+
+                // loop through the word from the end. If there is an invalid character at the end, it will keep removing subsequent invalid characters until it finds a valid one
+                int validEnd = 1;
+                for(int w = strlen(currentWord) - 1; w >= 0; w--) {
+                    for(int c = 0; c < sizeof(otherTokens); c++) {
+                        if(currentWord[w] == otherTokens[c]) {
+                            currentWord[w] = '\0';
+                            validEnd = 0;
+                        }
+                    }
+                    if(validEnd) {
+                        break;
+                    }
+                    validEnd = 1;
+                }
+                j = 0;
+              
+            }
+
+        // start of a word
+            else if(inWord == 0) {
+                int validStart = 1;
+                for(int c = 0; c < sizeof(otherTokens); c++) {
+                    if(buf[i] == otherTokens[c]) {
+                        validStart = 0;
+                    } 
+                }
+                if(validStart) {
+                    inWord = 1;
+                    //words++;
+                }
+            }
+
+        // in word
+            if(inWord == 1) {
+               currentWord[j] = buf[i];
+               j++; 
+            }
+        }
     }
 }
 
 // use this for batch since we pass in a file
-void readIn(int fd, Token *front)
+void readIn(int argc, char *filename, Token *front)
 {
-    char buf[BUFSIZE];
-    int bytes_read;
+    char buf[100];
+    char currentWord[45];
+    int bytes;
+    int inWord;
+    int j = 0;
+    while((bytes = read(bytes, buf, sizeof(buf))) > 0) {
+        for(int i = 0; i < bytes; i++) {
+        // end of a word
+            if(isspace(buf[i])) {
+                
+                inWord = 0;
+                currentWord[j] = '\0';
+                createToken(currentWord, front);
 
-
-    int comment = 0;
-    int inWord = 0;
-    char currentToken[MAXWORD];
-    int tokenPos = 0;
-
-    while((bytes_read = read(fd, buf, BUFSIZE)) > 0) {
-        for(int i = 0; i < bytes_read; i++) {
-
-            if(buf[i] == '\n') {
-                //Add something later to deal with this case
-            }
-
-            if(comment || buf[i] == '#') {
-                if(buf[i] != '\n') {
-                    comment = 1;
-                    continue;
+                // loop through the word from the end. If there is an invalid character at the end, it will keep removing subsequent invalid characters until it finds a valid one
+                int validEnd = 1;
+                for(int w = strlen(currentWord) - 1; w >= 0; w--) {
+                    for(int c = 0; c < sizeof(otherTokens); c++) {
+                        if(currentWord[w] == otherTokens[c]) {
+                            currentWord[w] = '\0';
+                            validEnd = 0;
+                        }
+                    }
+                    if(validEnd) {
+                        break;
+                    }
+                    validEnd = 1;
                 }
-                else {
-                    comment = 0;
+                j = 0;
+              
+            }
+
+        // start of a word
+            else if(inWord == 0) {
+                int validStart = 1;
+                for(int c = 0; c < sizeof(otherTokens); c++) {
+                    if(buf[i] == otherTokens[c]) {
+                        validStart = 0;
+                    } 
+                }
+                if(validStart) {
+                    inWord = 1;
+                    //words++;
                 }
             }
-            //start of word
-            if(!inWord && !isspace(buf[i])) {
-                inWord = 1;                
+
+        // in word
+            if(inWord == 1) {
+               currentWord[j] = buf[i];
+               j++; 
             }
-
-            if(inWord) {
-
-            //end of word
-                if(isspace(buf[i])) {
-                    inWord = 0;
-                //add current token to list of commands
-                    CreateToken(currentToken, front);
-                //reset current token length
-                    currentToken[0] = '\0';
-                    tokenPos = 0;
-
-                    continue;
-                }
-                //middle of word
-                currentToken[tokenPos++] = buf[i];
-                currentToken[tokenPos] = '\0';
-            }
-        //NEED TO ADD CASE FOR END OF FILE WITH CURRENTTOKEN > 0
-
-
-            
         }
-
     }
 }
 
 int main(int argc, char *argv[]) {    
-    int fd;
-    if (argc == 1) {
-        printf("No arguments provided\n");
-        printf("stdin is a terminal\n");
-        printf("Welcome to my shell!\n");
-        fd = 1;
-        
-        } 
-    if (argc == 0) {
-        printf("No arguments provided\n");
-        printf("stdin is a terminal\n");
-        printf("Welcome to my shell!\n");
-    } 
-
-
+    Token *front = NULL;
     
+    // if (argc == 1) {
+    //     printf("No arguments provided\n");
+    //     printf("stdin is a terminal\n");
+    //     printf("Welcome to my shell!\n");
+    //     } 
+    // if (argc == 0) {
+    //     printf("No arguments provided\n");
+    //     printf("stdin is a terminal\n");
+    //     printf("Welcome to my shell!\n");
+    // } 
+
     int fd = isatty(STDIN_FILENO);
     if (fd == 1) {
         int exitStatus = 1;
         // stdin is a terminal || interactive mode
         printf("Welcome to my shell!\n");
         printf("mysh>");
-
-
-        // fopen(argv[1], "r");
-        // ^ use this for batch since we pass in a file
         
         // read in the file
-        Token *front = NULL;
         
         while(exitStatus != 0)
         {
@@ -143,19 +189,16 @@ int main(int argc, char *argv[]) {
             {
                 // this implements the link list of tokens
                 // it does all the work of creating and storing data
-                CreateToken(argv[i], front);
+                // linked list order is backwards 
+                front = CreateToken(argv[i], front);
             }
 
             
-            //read from stdin
-            printf("mysh> ");
-            readIn(0, front);
-
 
             // search for exit in the linked list
             while(front != NULL)
             {
-                if(front -> str == 'exit')
+                if(front -> str == 'exit' || front -> str == 'die')
                 {
                     // exit the loop if the line contains exit
                     exitStatus = 0;
@@ -163,12 +206,15 @@ int main(int argc, char *argv[]) {
                 }
                 front = front->next;
             }
-            
+
         }
         
+        readIn(argc, argv, front);
+    }
         
-
-        
+    // stdin is a file
+    else {// fd == 0 
+        readFile(argc, argv[1], front);
     }
 
     return 0;
