@@ -111,6 +111,7 @@ void readIn(int argc, char *filename, Token *front)
     int j = 0;
     while((bytes = read(bytes, buf, sizeof(buf))) > 0) {
         for(int i = 0; i < bytes; i++) {
+            if (buf[i] == '\n') return;
         // end of a word
             if(isspace(buf[i])) {
                 
