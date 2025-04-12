@@ -143,7 +143,6 @@ int main(int argc, char *argv[]) {
             {
                 // this implements the link list of tokens
                 // it does all the work of creating and storing data
-                // linked list order is backwards 
                 CreateToken(argv[i], front);
             }
 
