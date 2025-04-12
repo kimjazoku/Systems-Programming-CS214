@@ -51,29 +51,43 @@ void readFile(int argc, char *filename, Token *front)
     int bytes;
     int inWord;
     int j = 0;
-    while((bytes = read(bytes, buf, sizeof(buf))) > 0) {
+    int fd = open(filename, O_RDONLY);
+    if (fd == -1) {
+        perror("Failed to open file");
+        return;
+    }
+    while((bytes = read(fd, buf, sizeof(buf))) > 0) {
         for(int i = 0; i < bytes; i++) {
+            if (buf[i] == '\n')
+            {
+                if (inWord)
+                {
+                    currentWord[j] = '\0';
+                    front = CreateToken(currentWord, front);
+                }
+                close(fd);
+                return;  
+            } 
         // end of a word
             if(isspace(buf[i])) {
-                
                 inWord = 0;
                 currentWord[j] = '\0';
-                createToken(currentWord, front);
+                front = createToken(currentWord, front);
 
                 // loop through the word from the end. If there is an invalid character at the end, it will keep removing subsequent invalid characters until it finds a valid one
-                int validEnd = 1;
-                for(int w = strlen(currentWord) - 1; w >= 0; w--) {
-                    for(int c = 0; c < sizeof(otherTokens); c++) {
-                        if(currentWord[w] == otherTokens[c]) {
-                            currentWord[w] = '\0';
-                            validEnd = 0;
-                        }
-                    }
-                    if(validEnd) {
-                        break;
-                    }
-                    validEnd = 1;
-                }
+                // int validEnd = 1;
+                // for(int w = strlen(currentWord) - 1; w >= 0; w--) {
+                //     for(int c = 0; c < sizeof(otherTokens); c++) {
+                //         if(currentWord[w] == otherTokens[c]) {
+                //             currentWord[w] = '\0';
+                //             validEnd = 0;
+                //         }
+                //     }
+                //     if(validEnd) {
+                //         break;
+                //     }
+                //     validEnd = 1;
+                // }
                 j = 0;
               
             }
@@ -99,6 +113,7 @@ void readFile(int argc, char *filename, Token *front)
             }
         }
     }
+    close(fd);
 }
 
 // use this for batch since we pass in a file
@@ -109,30 +124,38 @@ void readIn(int argc, char *filename, Token *front)
     int bytes;
     int inWord;
     int j = 0;
-    while((bytes = read(bytes, buf, sizeof(buf))) > 0) {
+
+    while((bytes = read(STDIN_FILENO, buf, sizeof(buf))) > 0) {
         for(int i = 0; i < bytes; i++) {
-            if (buf[i] == '\n') return;
+            if (buf[i] == '\n')
+            {
+                if (inWord)
+                {
+                    currentWord[j] = '\0';
+                    front = CreateToken(currentWord, front);
+                }
+                return;  
+            } 
         // end of a word
             if(isspace(buf[i])) {
-                
                 inWord = 0;
                 currentWord[j] = '\0';
-                createToken(currentWord, front);
+                front = createToken(currentWord, front);
 
                 // loop through the word from the end. If there is an invalid character at the end, it will keep removing subsequent invalid characters until it finds a valid one
-                int validEnd = 1;
-                for(int w = strlen(currentWord) - 1; w >= 0; w--) {
-                    for(int c = 0; c < sizeof(otherTokens); c++) {
-                        if(currentWord[w] == otherTokens[c]) {
-                            currentWord[w] = '\0';
-                            validEnd = 0;
-                        }
-                    }
-                    if(validEnd) {
-                        break;
-                    }
-                    validEnd = 1;
-                }
+                // int validEnd = 1;
+                // for(int w = strlen(currentWord) - 1; w >= 0; w--) {
+                //     for(int c = 0; c < sizeof(otherTokens); c++) {
+                //         if(currentWord[w] == otherTokens[c]) {
+                //             currentWord[w] = '\0';
+                //             validEnd = 0;
+                //         }
+                //     }
+                //     if(validEnd) {
+                //         break;
+                //     }
+                //     validEnd = 1;
+                // }
                 j = 0;
               
             }
