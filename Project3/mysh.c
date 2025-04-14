@@ -172,14 +172,20 @@ void readInput(int input_fd, int interactive, Token **front) {
             }
 
             if (interactive) {
-                printTokens(*front);
-                freeTokens(*front);
+                if(DEBUG)
+                {
+                    printTokens(*front);
+                }
+                // freeTokens(*front);
                 *front = NULL;
                 printf("mysh> ");
                 fflush(stdout);
             } else {
-                printTokens(*front);
-                freeTokens(*front);
+                if(DEBUG)
+                {
+                    printTokens(*front);
+                }
+                // freeTokens(*front);
                 *front = NULL;
             }
         } else if (isspace(ch)) {
@@ -196,8 +202,8 @@ void readInput(int input_fd, int interactive, Token **front) {
             }
         }
     }
-    
     if (interactive) printf("\nGoodbye!\n");
+    freeTokens(*front);
 }
 
 int main(int argc, char *argv[]) {
