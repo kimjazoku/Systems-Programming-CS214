@@ -4,16 +4,102 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
 
 #define DEBUG 1
+#define BUFSIZE 100
+#define MAXWORD 45
 #define MAX_BUF 100
 
 char otherTokens[] = { '>', '<', '|', '*', '#' };
+char *builtIns[] = {"cd", "pwd", "which", "exit", "die"};
+
 
 typedef struct Token {
     char *str;
     struct Token *next;
 } Token;
+
+//pass in front->next
+int cd(Token *args) {
+
+    if(args == NULL) {
+        errno = EINVAL;
+        perror("0 arguments given");
+        return -1;
+    }
+    if(args->next) {
+        errno = EINVAL;
+        printf("Too many arguments given");
+        return -1;
+    }
+
+    int status = chdir(args->str);
+    if(status == -1) {
+        perror("Cannot change current directory");
+        return -1;
+    }
+
+    return 0;
+
+}
+
+int pwd(Token *args) {
+
+    if(args != NULL) {
+        printf("Invalid number of args");
+        return -1;
+    }
+    char buf[BUFSIZE];
+    getcwd(buf, BUFSIZE);
+    printf("%s\n", buf);
+
+    return 0;
+}
+
+int execute(Token *ptr) {
+
+    char call[128] = ".";
+
+    while(ptr != NULL) {
+        strcat(call, ptr->str);
+        strcat(call, " ");
+        ptr = ptr->next;
+    }
+
+    int exitStatus = system(call);
+    if(exitStatus != 0) {
+        errno = exitStatus;
+        perror("error running program");
+        return -1;
+    }
+
+    return 0;
+    
+}
+
+/* int which(Token *arg) {
+    
+    if(arg == NULL) {
+        errno = EINVAL;
+        perror("0 arguents given");
+        return -1;
+    }
+    if (arg->next != NULL) {
+        errno = EINVAL;
+        perror("Too many arguments given");
+        return -1;
+    }
+
+    for(int i = 0; i < sizeof(builtIns); i++) {
+        if(strcmp(arg, builtIns[i]) == 0) {
+            printf("Error: cannot use the name of a built-in argument (%s)\n", arg->str);
+            return -1;
+        }
+    }
+    
+    
+} */
 
 Token* CreateToken(const char *word, Token *front) {
     Token *newToken = malloc(sizeof(Token));
@@ -110,7 +196,7 @@ void readInput(int input_fd, int interactive, Token **front) {
             }
         }
     }
-
+    
     if (interactive) printf("\nGoodbye!\n");
 }
 
@@ -132,6 +218,27 @@ int main(int argc, char *argv[]) {
     }
 
     readInput(input_fd, interactive, &front);
+
+    // Token *front = (Token*) malloc(sizeof(Token));
+    // front->str = "";
+    // front->next = NULL;
+
+    if(strcmp(front->str, "cd") == 0) {
+        cd(front->next);
+    }
+
+
+    if(strcmp(front->str, "pwd") == 0) {
+        pwd(front->next);
+    }
+
+    if(front->str[0] == '/') {
+        execute(front);
+    }
+
+   /* if(strcmp(command->str, "which") == 0) {
+        which(command->next);
+    } */
 
     if (input_fd != STDIN_FILENO)
         close(input_fd);
