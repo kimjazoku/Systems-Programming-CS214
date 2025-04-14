@@ -140,7 +140,7 @@ void freeTokens(Token *front) {
     }
 }
 
-void readInput(int input_fd, int interactive, Token **front) {
+void readInput(int input_fd, int interactive, Token *front) {
     char buf[MAX_BUF];
     char word[45];
     int j = 0, inWord = 0;
@@ -157,12 +157,12 @@ void readInput(int input_fd, int interactive, Token **front) {
         if (ch == '\n') {
             if (inWord) {
                 word[j] = '\0';
-                *front = CreateToken(word, *front);
+                front = CreateToken(word, front);
                 j = 0;
             }
 
             // check for exit/die
-            Token *curr = *front;
+            Token *curr = front;
             while (curr) {
                 if (strcmp(curr->str, "exit") == 0 || strcmp(curr->str, "die") == 0) {
                     if (interactive) printf("Goodbye!\n");
@@ -172,29 +172,28 @@ void readInput(int input_fd, int interactive, Token **front) {
             }
 
             if (interactive) {
-                if(DEBUG)
-                {
-                    printTokens(*front);
-                }
                 // freeTokens(*front);
-                *front = NULL;
+                // front = NULL;
                 printf("mysh> ");
                 fflush(stdout);
             } else {
                 if(DEBUG)
                 {
-                    printTokens(*front);
+                    printTokens(front);
                 }
                 // freeTokens(*front);
-                *front = NULL;
+                front = NULL;
             }
         } else if (isspace(ch)) {
             if (inWord) {
                 word[j] = '\0';
-                *front = CreateToken(word, *front);
+                front = CreateToken(word, front);
                 j = 0;
                 inWord = 0;
             }
+            
+            
+
         } else {
             if (!inWord) inWord = 1;
             if (j < sizeof(word) - 1) {
@@ -202,8 +201,16 @@ void readInput(int input_fd, int interactive, Token **front) {
             }
         }
     }
+
+    printf("%s", front->str);
+    
+    if(strcmp(front->str, "cd") == 0) {
+        cd(front->next);
+    }
+
+
     if (interactive) printf("\nGoodbye!\n");
-    freeTokens(*front);
+    freeTokens(front);
 }
 
 int main(int argc, char *argv[]) {
@@ -223,7 +230,7 @@ int main(int argc, char *argv[]) {
         printf("fd status: %d\n", interactive);
     }
 
-    readInput(input_fd, interactive, &front);
+    readInput(input_fd, interactive, front);
 
     // Token *front = (Token*) malloc(sizeof(Token));
     // front->str = "";
