@@ -65,19 +65,17 @@ int main(int argc, char *argv[]) {
         }
         char *line = read_line(input_fd, interactive);
         if (!line) break;  // End-of-File
-
-        // Tokenize the input line.
+    
         int numTokens = 0;
         char **tokens = tokenize(line, &numTokens);
         free(line);
-
-        // Skip empty lines.
+    
         if (numTokens == 0) {
             free_tokens(tokens, numTokens);
             continue;
         }
-
-        // Remove comment: if a token starts with '#' then ignore it and what follows.
+    
+        // Remove comments and handle blank lines...
         for (int i = 0; i < numTokens; i++) {
             if (tokens[i][0] == '#') {
                 numTokens = i;
@@ -88,14 +86,14 @@ int main(int argc, char *argv[]) {
             free_tokens(tokens, numTokens);
             continue;
         }
-
-        // Process the command tokens (includes builtin, redirection, pipeline, wildcards, conditionals)
+    
         int ret = process_command(tokens, numTokens, interactive, &last_status);
-        free_tokens(tokens, numTokens);
-        if (ret == -2) { // exit or die command encountered
+        // Do NOT call free_tokens(tokens, numTokens) here since process_command has taken care of freeing tokens.
+        if (ret == -2) { // exit or die encountered
             break;
         }
     }
+    
 
     if (interactive)
         printf("Exiting my shell.\n");
