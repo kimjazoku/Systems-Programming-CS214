@@ -608,23 +608,40 @@ int process_command(char **tokens, int numTokens, int interactive, int *last_sta
     }
     
     if (pipe_index != -1) {
-        // Pipeline mode.
-        // Subcommands in a pipeline are not expected to have redirection.
-        tokens[pipe_index] = NULL; // split tokens into two arrays
+        // Split the tokens array into two independent arrays for left and right commands.
         int numTokens1 = pipe_index;
         int numTokens2 = numTokens - pipe_index - 1;
         if (numTokens2 <= 0) {
             fprintf(stderr, "Syntax error: missing command after pipe\n");
             return 1;
         }
-        // Expand wildcards in each half.
-        char **leftTokens = expand_wildcards(tokens, &numTokens1);
-        char **rightTokens = expand_wildcards(tokens + pipe_index + 1, &numTokens2);
+
+        // Allocate new arrays for left and right tokens.
+        char **leftTokens = malloc(numTokens1 * sizeof(char *));
+        char **rightTokens = malloc(numTokens2 * sizeof(char *));
+        if (!leftTokens || !rightTokens) {
+            perror("malloc");
+            exit(EXIT_FAILURE);
+        }
+
+        // Copy the left tokens.
+        for (int i = 0; i < numTokens1; i++) {
+            leftTokens[i] = strdup(tokens[i]);
+        }
+        // Copy the right tokens.
+        for (int i = 0; i < numTokens2; i++) {
+            rightTokens[i] = strdup(tokens[pipe_index + 1 + i]);
+        }
+        // tokens = expand_wildcards(tokens, &numTokens);
+
+        leftTokens = expand_wildcards(leftTokens, &numTokens1);
+        rightTokens = expand_wildcards(rightTokens, &numTokens2);
+
         int status = execute_pipeline(leftTokens, numTokens1, rightTokens, numTokens2);
         free_tokens(leftTokens, numTokens1);
         free_tokens(rightTokens, numTokens2);
         *last_status = status;
-        return status;
+        return status;        
     }
     
     // For a single command, first parse redirection.
@@ -637,7 +654,8 @@ int process_command(char **tokens, int numTokens, int interactive, int *last_sta
     }
     
     // Expand wildcards.
-    tokens = expand_wildcards(tokens, &numTokens);
+    
+    
 
     // NULL-terminate the token array for exec functions.
     tokens = realloc(tokens, (numTokens + 1) * sizeof(char *));
