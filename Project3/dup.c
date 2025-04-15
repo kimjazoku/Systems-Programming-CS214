@@ -579,7 +579,7 @@ int process_command(char **tokens, int numTokens, int interactive, int *last_sta
         numTokens--;
         if (*last_status != 0) {
             // Previous command failed, so skip executing this command.
-            free_tokens(tokens, numTokens + 1); // +1 because original array had one more element.
+            free_tokens(tokens, numTokens + 1); // original array size was numTokens+1
             return 0;
         }
     }
@@ -605,6 +605,13 @@ int process_command(char **tokens, int numTokens, int interactive, int *last_sta
     }
     
     if (pipe_index != -1) {
+        // Additional check: if pipe is the first token, then the left side is missing.
+        if (pipe_index == 0) {
+            fprintf(stderr, "Syntax error: missing command before pipe\n");
+            free_tokens(tokens, numTokens);
+            return 1;
+        }
+        
         // Pipeline branch.
         int numTokens1 = pipe_index;
         int numTokens2 = numTokens - pipe_index - 1;
@@ -637,6 +644,14 @@ int process_command(char **tokens, int numTokens, int interactive, int *last_sta
         leftTokens = expand_wildcards(leftTokens, &numTokens1);
         rightTokens = expand_wildcards(rightTokens, &numTokens2);
 
+        // Ensure both token arrays are NULL-terminated.
+        leftTokens = realloc(leftTokens, (numTokens1 + 1) * sizeof(char *));
+        if (!leftTokens) { perror("realloc"); exit(EXIT_FAILURE); }
+        leftTokens[numTokens1] = NULL;
+        rightTokens = realloc(rightTokens, (numTokens2 + 1) * sizeof(char *));
+        if (!rightTokens) { perror("realloc"); exit(EXIT_FAILURE); }
+        rightTokens[numTokens2] = NULL;
+
         int status = execute_pipeline(leftTokens, numTokens1, rightTokens, numTokens2);
         free_tokens(leftTokens, numTokens1);
         free_tokens(rightTokens, numTokens2);
@@ -659,6 +674,7 @@ int process_command(char **tokens, int numTokens, int interactive, int *last_sta
     
     // NULL-terminate the token array for exec functions.
     tokens = realloc(tokens, (numTokens + 1) * sizeof(char *));
+    if (!tokens) { perror("realloc"); exit(EXIT_FAILURE); }
     tokens[numTokens] = NULL;
     
     // Check if the command is a built-in.
