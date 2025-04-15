@@ -571,27 +571,26 @@ int parse_redirection(char **tokens, int *numTokens, char **infile, char **outfi
 // -----------------------
 int process_command(char **tokens, int numTokens, int interactive, int *last_status) {
     // Check for conditionals ("and" or "or") at the beginning.
-    int conditional = 0; // 0 = none, 1 = and, 2 = or
     if (strcmp(tokens[0], "and") == 0) {
-        conditional = 1;
-        // Remove the conditional token.
+        // Remove the "and" token.
         for (int i = 0; i < numTokens - 1; i++) {
-            tokens[i] = tokens[i+1];
+            tokens[i] = tokens[i + 1];
         }
         numTokens--;
         if (*last_status != 0) {
-            // previous command failed so skip this command.
+            // Previous command failed, so skip executing this command.
+            free_tokens(tokens, numTokens + 1); // +1 because original array had one more element.
             return 0;
         }
     }
     else if (strcmp(tokens[0], "or") == 0) {
-        conditional = 2;
         for (int i = 0; i < numTokens - 1; i++) {
-            tokens[i] = tokens[i+1];
+            tokens[i] = tokens[i + 1];
         }
         numTokens--;
         if (*last_status == 0) {
-            // previous command succeeded so skip this command.
+            // Previous command succeeded, so skip executing this command.
+            free_tokens(tokens, numTokens + 1);
             return 0;
         }
     }
@@ -606,11 +605,12 @@ int process_command(char **tokens, int numTokens, int interactive, int *last_sta
     }
     
     if (pipe_index != -1) {
-        // Split the tokens array into two independent arrays for left and right commands.
+        // Pipeline branch.
         int numTokens1 = pipe_index;
         int numTokens2 = numTokens - pipe_index - 1;
         if (numTokens2 <= 0) {
             fprintf(stderr, "Syntax error: missing command after pipe\n");
+            free_tokens(tokens, numTokens);
             return 1;
         }
 
@@ -630,8 +630,10 @@ int process_command(char **tokens, int numTokens, int interactive, int *last_sta
         for (int i = 0; i < numTokens2; i++) {
             rightTokens[i] = strdup(tokens[pipe_index + 1 + i]);
         }
-        // tokens = expand_wildcards(tokens, &numTokens);
+        // Free the original tokens array.
+        free_tokens(tokens, numTokens);
 
+        // Expand wildcards in both halves.
         leftTokens = expand_wildcards(leftTokens, &numTokens1);
         rightTokens = expand_wildcards(rightTokens, &numTokens2);
 
@@ -642,19 +644,19 @@ int process_command(char **tokens, int numTokens, int interactive, int *last_sta
         return status;        
     }
     
-    // For a single command, first parse redirection.
+    // Non-pipeline branch.
+    // First, parse redirection.
     char *infile = NULL, *outfile = NULL;
     if (parse_redirection(tokens, &numTokens, &infile, &outfile)) {
-        // Parsing error.
+        free_tokens(tokens, numTokens);
         free(infile);
         free(outfile);
         return 1;
     }
     
     // Expand wildcards.
+    tokens = expand_wildcards(tokens, &numTokens);
     
-    
-
     // NULL-terminate the token array for exec functions.
     tokens = realloc(tokens, (numTokens + 1) * sizeof(char *));
     tokens[numTokens] = NULL;
@@ -662,8 +664,10 @@ int process_command(char **tokens, int numTokens, int interactive, int *last_sta
     // Check if the command is a built-in.
     int builtin_status = run_builtin(tokens, numTokens, interactive);
     if (builtin_status != -1) {
-        // built-in command executed
+        free_tokens(tokens, numTokens);
         *last_status = (builtin_status >= 0 ? builtin_status : 0);
+        free(infile);
+        free(outfile);
         return builtin_status;
     }
     
@@ -671,6 +675,7 @@ int process_command(char **tokens, int numTokens, int interactive, int *last_sta
     int status = execute_external(tokens, infile, outfile);
     *last_status = status;
     
+    free_tokens(tokens, numTokens);
     free(infile);
     free(outfile);
     return status;
