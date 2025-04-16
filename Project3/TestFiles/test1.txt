@@ -1,0 +1,4 @@
+echo hello 
+ls test*.txt
+cd whatever
+pwd
