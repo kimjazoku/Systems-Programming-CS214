@@ -6,7 +6,7 @@ Our Test Plan
 To test our implementation of the shell, we came up with a handful of tests, ranking simple to complex.
 
 **The simple tests** 
-We first performed simple tests for specific shell functions (i.e. pwd, cd, ls, etc.) to ensure that our shell worked correctly and threw the appropriate errors. This initial testing phase exposed a lot of holes in error tossing,
+We first performed simple tests for specific shell functions (i.e. pwd, cd, ls, etc.) to ensure that our shell worked correctly and threw the appropriate errors. This initial testing phase exposed a lot of holes in error testing,
 so we spent some time using VS Code's built in debugger to go through our file line by line. 
 
 After the basics were fixed and retested, we then began to ramp up the testing complexity. 
