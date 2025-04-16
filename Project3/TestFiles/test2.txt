@@ -1,1 +1,5 @@
-test
+cd TestFiles
+pwd
+ls *.txt
+ls test*.txt
+echo hello | tr a-z A-Z
