@@ -1,4 +1,4 @@
 echo hello 
 ls test*.txt
-cd whatever
+cd TestFiles
 pwd
