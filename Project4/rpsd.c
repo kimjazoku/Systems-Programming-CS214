@@ -7,6 +7,7 @@
 #define PORT 8080
 #define BUFFSIZE 1024
 
+//gcc player.c rpsd.c -o rpsd
 
 #define BACKLOG 10
 
@@ -173,13 +174,13 @@ int main(int argc, char* argv[])
                     for(int i = 0; i < queue->count; i++)
                     {
                         struct player *temp = queue->p;
-                        queue->p = queue->next;
+                        queue = queue->next;
                         destroy_player(temp);
                     }
                     free(queue);
 
                     struct player *temp = queue->p;
-                    queue->p = queue->next;
+                    queue = queue->next;
                     queue->count = queue->count - 1;
                     
                     // send them a BEGIN message
@@ -204,7 +205,7 @@ int main(int argc, char* argv[])
         for(int i = 0; i < queue->count; i++)
         {
             struct player *temp = queue->p;
-            queue->p = queue->next;
+            queue = queue->next;
             destroy_player(temp);
         }
         free(queue);
